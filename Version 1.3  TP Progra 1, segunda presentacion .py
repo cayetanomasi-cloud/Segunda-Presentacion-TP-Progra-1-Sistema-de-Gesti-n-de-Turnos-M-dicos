@@ -1,9 +1,11 @@
 
-# Segunda Presentacion TP Progra 1
 
 import json
 from datetime import datetime
 import os
+import csv
+
+
 
 
 # FUNCIONES PACIENTES: 
@@ -196,7 +198,7 @@ def actualizar_paciente(paciente, Pacientes, ruta_archivo_pacientes):
         print("Error:", e)
         
 
-def buscar_y_eliminar_paciente(ruta_archivo_pacientes):
+def buscar_y_remover_paciente(ruta_archivo_pacientes):
     """
     Objetivo: Buscar y eliminar un paciente.
     Parametros: ruta_archivo_pacientes (ruta del archivo JSON).
@@ -440,7 +442,6 @@ def buscar_y_eliminar_medico(ruta_archivo_medicos):
     """
     Objetivo: Buscar y eliminar un medico.
     Parametros: ruta_archivo_medicos (ruta del archivo JSON).
-    Retorno: Ninguno.
     """
 
     try:
@@ -577,10 +578,53 @@ def buscar_medico_para_cargar_turno(paciente, ruta_archivo_medicos, ruta_archivo
 
         print("Error:", e)
 
+# FUNCIONES DE TURNOS
+
+def buscar_turno(ruta_archivo_turnos):
+    """
+    Objetivo: Buscar un turno del Paciente con el CUIT
+    Parametros: ruta_archivo_turnos (ruta del archivo CSV)
+    Retorno: Turno encontrado
+    """
+
+    try:
+
+        with open(ruta_archivo_turnos, "r") as archivo:
+
+            lector = csv.reader(archivo, delimiter=";")
+            turnos = list(lector)
+
+        CUIT = input("Ingresar CUIT del paciente: ")
+        encontrado = False
+
+        for turno in turnos:
+
+            if CUIT == turno[0]:
+                encontrado = True
+                print("Turno encontrado.")
+                print(turno)
+
+        if encontrado == False:
+            print("Turno no existente.")
+            print("Debe ingresarlo a la Opcion correspondiente... ")
+
+    except FileNotFoundError:
+
+        print("El archivo no existe.")
+        print("Debe ingresarlo a la Opcion correspondiente... ")
+
+    except Exception as e:
+        print("Error:", e)
+
+
+
+
 
 def crear_registro_turno(paciente, medico, ruta_archivo_turnos):
     """
-    Objetivo: Crear un registro de turno.
+    Objetivo: Generar un registro de fecha y hora del turno en un archivo CSV para un paciente con un medico.
+    Parametros: un paciente, un medico y el archivo CSV de Turnos.
+    Retorno: Registro del turno en archivo CSV
     """
 
     try:
@@ -589,26 +633,165 @@ def crear_registro_turno(paciente, medico, ruta_archivo_turnos):
 
         fecha = datetime.strptime(fecha_texto, "%Y-%m-%d").date()
 
+        hora_texto = input("Ingrese una hora (HH:MM): ")
+
+        hora = datetime.strptime(hora_texto, "%H:%M").time()
+
         with open(ruta_archivo_turnos, "a") as archivo:
 
-            registro = f"{medico['CUIT']};{paciente['CUIT']};{fecha}\n"
+            registro = f"{paciente['CUIT']};{medico['CUIT']};{fecha};{hora}\n"
 
             archivo.write(registro)
 
-        print("Archivo generado con exito.")
+        print("Turno registrado con exito.")
 
     except ValueError:
 
-        print("Formato de fecha incorrecto.")
+        print("Formato de fecha u hora incorrecto.")
 
     except FileNotFoundError:
 
         print("No se encontro el archivo o la ruta indicada.")
-        
+
+    except Exception as e:
+
+        print("Error:", e)
+
+
+
+def buscar_turno_para_atualizar(ruta_archivo_turnos):
+    """
+    Objetivo: Buscar un turno por el CUIT del Paciente
+    Parametros: ruta_archivo_turnos (ruta del archivo CSV)
+    Retorno: Turno encontrado
+    """
+
+    try:
+
+        with open(ruta_archivo_turnos, "r") as archivo:
+
+            lector = csv.reader(archivo, delimiter=";")
+            turnos = list(lector)
+
+        CUIT = input("Ingresar CUIT del paciente: ")
+        encontrado = False
+
+        for turno in turnos:
+
+            if CUIT == turno[0]:
+                encontrado = True
+                print("Turno encontrado.")
+                print(turno)
+                actualizar_turno(turno, ruta_archivo_turnos)
+                return turno
+
+        if encontrado == False:
+            print("Turno no existente.")
+            print("Debe ingresarlo en la Opcion 1.2... ")
+
+    except FileNotFoundError:
+
+        print("El archivo no existe.")
+        print("Debe ingresar a la correspondiente... ")
 
     except Exception as e:
         print("Error:", e)
 
+
+        
+
+def actualizar_turno(turno, ruta_archivo_turnos):
+    """
+    Objetivo: Actualizar fecha y hora de un turno.
+    Parametros: turno y ruta_archivo_turnos.
+    Retorno: Archivo CSV actualizado.
+    """
+
+    try:
+
+        fecha_texto = input("Ingrese una fecha (AAAA-MM-DD): ")
+
+        fecha = datetime.strptime(fecha_texto, "%Y-%m-%d").date()
+
+        hora_texto = input("Ingrese una hora (HH:MM): ")
+
+        hora = datetime.strptime(hora_texto, "%H:%M").time()
+
+        with open(ruta_archivo_turnos, "r") as archivo:
+
+            lector = csv.reader(archivo, delimiter=";")
+            turnos = list(lector)
+
+        for registro in turnos:
+
+            if registro[0] == turno[0] and registro[1] == turno[1] and registro[2] == turno[2] and registro[3] == turno[3]:
+
+                registro[2] = str(fecha)
+                registro[3] = str(hora)
+
+        with open(ruta_archivo_turnos, "w", newline="") as archivo:
+
+            escritor = csv.writer(archivo, delimiter=";")
+            escritor.writerows(turnos)
+
+        print("Turno actualizado con exito.")
+
+    except ValueError:
+
+        print("Formato de fecha u hora incorrecto.")
+
+    except Exception as e:
+
+        print("Error:", e)
+
+    
+
+def buscar_turno_para_remover(ruta_archivo_turnos):
+    """
+    Objetivo: Buscar un turno por el CUIT del Paciente y luego eliminar.
+    Parametros: ruta_archivo_turnos (ruta del archivo CSV).
+    Retorno: Archivo CSV sin el turno.
+    """
+
+    try:
+
+        with open(ruta_archivo_turnos, "r") as archivo:
+
+            lector = csv.reader(archivo, delimiter=";")
+            turnos = list(lector)
+
+        CUIT = input("Ingresar CUIT del paciente: ")
+        encontrado = False
+
+        for turno in turnos:
+
+            if CUIT == turno[0]:
+                encontrado = True
+                print("Turno encontrado.")
+                print(turno)
+                turnos.remove(turno)
+                break
+
+        if encontrado == True:
+
+            with open(ruta_archivo_turnos, "w", newline="") as archivo:
+
+                escritor = csv.writer(archivo, delimiter=";")
+                escritor.writerows(turnos)
+
+            print("Turno eliminado correctamente.")
+
+        else:
+            print("Turno no existente.")
+            print("Debe ingresar a la opcion correspondiente para crearlo... ")
+
+    except FileNotFoundError:
+
+        print("El archivo no existe.")
+        print("Debe ingresar a la opcion correspondiente para crearlo... ")
+
+    except Exception as e:
+        print("Error:", e)
 
 def main():
     
@@ -616,9 +799,9 @@ def main():
     
         ruta_actual = os.path.dirname(__file__)
 
-        ruta_archivo_pacientes = os.path.join(ruta_actual, "Pacientes_3.json")
+        ruta_archivo_pacientes = os.path.join(ruta_actual, "Pacientes.json")
 
-        ruta_archivo_medicos = os.path.join(ruta_actual, "medicos_3.json")
+        ruta_archivo_medicos = os.path.join(ruta_actual, "Medicos.json")
         
         ruta_archivo_turnos = os.path.join(ruta_actual, "Turnos.csv")
         
@@ -735,16 +918,16 @@ def main():
                 while opcion_turno != -1:    
                     
                     if opcion_turno == 1:
-                        pass
+                        buscar_turno(ruta_archivo_turnos)
 
                     elif opcion_turno == 2:
                         buscar_paciente_para_cargar_turno(ruta_archivo_pacientes, ruta_archivo_medicos, ruta_archivo_turnos)
                     
                     elif opcion_turno == 3:
-                        pass
+                        buscar_turno_para_atualizar(ruta_archivo_turnos)
                     
                     elif opcion_turno == 4:
-                        pass
+                        buscar_turno_para_remover(ruta_archivo_turnos)
                     
                     elif opcion_turno == 5:
                         pass
@@ -763,5 +946,6 @@ def main():
         
     except Exception as e:
         print("Error:", e)        
+
 
 main()
